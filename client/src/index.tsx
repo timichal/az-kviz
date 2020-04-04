@@ -2,8 +2,11 @@ import * as React from "react";
 import { render } from "react-dom";
 import { createContainer } from "react-tracked";
 import { FieldStateEnum, PlayerTurnEnum } from "./enums";
-import { SIDE_LENGTH, HEX_HEIGHT, HEX_RADIUS, HEX_RECTANGLE_HEIGHT, HEX_RECTANGLE_WIDTH } from './constants';
-const { useState, useEffect, useRef, useReducer } = React;
+import {
+  SIDE_LENGTH, HEX_HEIGHT, HEX_RADIUS, HEX_RECTANGLE_HEIGHT, HEX_RECTANGLE_WIDTH, FIELD_COORDS,
+} from "./constants";
+
+const { useEffect, useRef, useReducer } = React;
 
 interface field {
   x: number;
@@ -12,36 +15,7 @@ interface field {
 }
 
 const initialGlobalState = {
-  fields: [
-    { x: 3, y: 0, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 1, state: FieldStateEnum.UNTOUCHED },
-    { x: 3, y: 1, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 2, state: FieldStateEnum.UNTOUCHED },
-    { x: 3, y: 2, state: FieldStateEnum.UNTOUCHED },
-    { x: 4, y: 2, state: FieldStateEnum.UNTOUCHED },
-    { x: 1, y: 3, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 3, state: FieldStateEnum.PLAYER_2 },
-    { x: 3, y: 3, state: FieldStateEnum.UNTOUCHED },
-    { x: 4, y: 3, state: FieldStateEnum.UNTOUCHED },
-    { x: 1, y: 4, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 4, state: FieldStateEnum.UNTOUCHED },
-    { x: 3, y: 4, state: FieldStateEnum.UNTOUCHED },
-    { x: 4, y: 4, state: FieldStateEnum.UNTOUCHED },
-    { x: 5, y: 4, state: FieldStateEnum.UNTOUCHED },
-    { x: 0, y: 5, state: FieldStateEnum.UNTOUCHED },
-    { x: 1, y: 5, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 5, state: FieldStateEnum.PLAYER_1 },
-    { x: 3, y: 5, state: FieldStateEnum.UNTOUCHED },
-    { x: 4, y: 5, state: FieldStateEnum.UNTOUCHED },
-    { x: 5, y: 5, state: FieldStateEnum.UNTOUCHED },
-    { x: 0, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 1, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 2, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 3, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 4, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 5, y: 6, state: FieldStateEnum.UNTOUCHED },
-    { x: 6, y: 6, state: FieldStateEnum.UNTOUCHED },
-  ],
+  fields: FIELD_COORDS.map(([x, y]) => ({ x, y, state: FieldStateEnum.UNTOUCHED })),
   playerTurn: PlayerTurnEnum.PLAYER_1,
 };
 
@@ -113,8 +87,12 @@ const Board = () => {
     const [x, y] = [e.offsetX, e.offsetY];
     const hexY = Math.floor(y / (HEX_HEIGHT + SIDE_LENGTH));
     const hexX = Math.floor((x - (hexY % 2) * HEX_RADIUS) / HEX_RECTANGLE_WIDTH);
-    const fieldIdxToChange = fields.findIndex((f: field) => fields.x === hexX && fields.y === hexY);
-    if (fieldIdxToChange) {
+    const fieldIdxToChange = fields.findIndex((field: field) => (
+      field.x === hexX
+      && field.y === hexY
+      && [FieldStateEnum.UNTOUCHED, FieldStateEnum.CONTESTED].includes(field.state)
+    ));
+    if (fieldIdxToChange >= 0) {
       dispatch({
         type: "fieldChange",
         newField: {
@@ -125,11 +103,10 @@ const Board = () => {
       });
       dispatch({ type: "playerChange" });
     }
-
   };
 
-  const canvas = useRef(null);
-  useEffect(() => makeBoard(canvas.current.getContext("2d"), fields));
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => makeBoard(canvas.current?.getContext("2d"), fields));
   return <canvas ref={canvas} onClick={(e) => onClick(e.nativeEvent)} width="660" height="624" />;
 };
 
@@ -153,33 +130,3 @@ const App = (
 );
 
 render(App, document.getElementById("app"));
-
-/*
-const Cell = ({ value, id, changeValue }: { value: number, id: number, changeValue: any }) => {
-  let cellClass = "";
-  if (value === FieldStateEnum.PLAYER_1) cellClass = "cell--player1";
-  if (value === FieldStateEnum.PLAYER_2) cellClass = "cell--player2";
-  return (
-    <div
-      className={cellClass ? `cell ${cellClass}` : "cell"}
-      onClick={() => console.log("clicked", id)}
-    />
-  );
-};
-
-const GameBoard = () => {
-  // there are 1+2+3+4+5+6+7=28 fields
-  const [fields, setFields] = useState(new Array(28).fill(FieldStateEnum.PLAYER_1));
-  const [player, changePlayer] = useState(1);
-  console.log(Object.values(fields));
-
-  return (
-    <>
-      <div>{`Na tahu hráč ${player}`}</div>
-      <div className="field">
-        {fields.map((field, index) => <Cell value={field} id={index} changeValue={setFields} />)}
-      </div>
-    </>
-  );
-};
-*/
